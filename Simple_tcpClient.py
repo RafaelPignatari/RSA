@@ -18,7 +18,7 @@ print('resultadoPrimos ', resultadoPrimos)
 print('chavePublica ', chavePublicaCliente)
 print('chavePrivada ', chavePrivadaCliente)
 
-serverAddress = ('192.168.228.121', 1300)
+serverAddress = ('10.1.70.23', 1300)
 clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 input ("Pressione uma tecla para conectar ao servidor")
 clientSocket.connect(serverAddress)
