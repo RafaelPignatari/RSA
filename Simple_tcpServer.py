@@ -8,8 +8,8 @@ serverSocket.listen(5)
 
 print ("TCP Server\n")
 print ("Gerando números primos")
-p = helper.geraNumeroPrimo(1024)
-q = helper.geraNumeroPrimo(1024)
+p = helper.geraNumeroPrimo(4096)
+q = helper.geraNumeroPrimo(4096)
 print ("Números Gerados")
 
 n = p * q
@@ -25,11 +25,11 @@ while True :
     connectionSocket, addr = serverSocket.accept()
     connectionSocket.sendall(str(chavePublica).encode())
 
-    mensagem = connectionSocket.recv(65536)
+    mensagem = connectionSocket.recv(524288)
     chavePublicaCliente = eval(mensagem.decode())
     print ("Chave publica cliente: ", chavePublicaCliente)
 
-    mensagem = connectionSocket.recv(65536)
+    mensagem = connectionSocket.recv(524288)
     mensagemEncriptada = eval(mensagem.decode())
     mensagemDecriptada = helper.decriptografa(mensagemEncriptada, chavePrivada, n)
 

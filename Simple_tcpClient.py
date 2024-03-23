@@ -3,8 +3,8 @@ import helper
 
 print ("TCP Server\n")
 print ("Gerando números primos")
-p = helper.geraNumeroPrimo(1024)
-q = helper.geraNumeroPrimo(1024)
+p = helper.geraNumeroPrimo(4096)
+q = helper.geraNumeroPrimo(4096)
 print ("Números Gerados")
 
 n = p * q
@@ -23,16 +23,15 @@ clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 input ("Pressione uma tecla para conectar ao servidor")
 clientSocket.connect(serverAddress)
 
-mensagem = clientSocket.recv(65536)
+mensagem = clientSocket.recv(524288)
 chavePublicaServidor = eval(mensagem.decode())
 print ("Chave publica servidor: ", chavePublicaServidor)
 clientSocket.send(str(chavePublicaCliente).encode())
 sentence = input("Input lowercase sentence: ")
 
-# clientSocket.send(bytes(helper.criptografa(sentence, chavePublica), "utf-8"))
 clientSocket.send(str(helper.criptografa(sentence, chavePublicaServidor)).encode())
 
-mensagem = clientSocket.recv(65536)
+mensagem = clientSocket.recv(524288)
 msgCriptografada = eval(mensagem.decode())
 msgDecriptografada = helper.decriptografa(msgCriptografada, chavePrivadaCliente, n)
 
