@@ -1,96 +1,42 @@
-from socket import *
-import random
-import math
-
-def primos_entre_si(totient):
-    e = 2
-    while math.gcd(e, totient) != 1:
-        e += 1
-    return e
-
-def numeroEhPrimo(n, k=5):  
-    if n < 2: return False
-    for p in [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]:
-        if n % p == 0: return n == p
-    r, s = 0, n - 1
-    while s % 2 == 0:
-        r += 1
-        s //= 2
-    for _ in range(k):
-        a = random.randrange(2, n - 1)
-        x = pow(a, s, n)
-        if x == 1 or x == n - 1: continue
-        for _ in range(r - 1):
-            x = pow(x, 2, n)
-            if x == n - 1: break
-        else: return False
-    return True
-
-def geraNumeroPrimo(bits):
-    while True:
-        p = random.getrandbits(bits)
-        if numeroEhPrimo(p): return p
-
-def multiplicaInverso(e, phi):
-    def extended_gcd(a, b):
-        if a == 0:
-            return (b, 0, 1)
-        else:
-            g, x, y = extended_gcd(b % a, a)
-            return (g, y - (b // a) * x, x)
-
-    _, x, _ = extended_gcd(e, phi)
-    return x % phi
-
-def funcaoTotiente(p, q):
-    return (p-1) * (q-1)
-
-def criptografa(frase, p, q, ):
-    N = p * q
-    m = funcaoTotiente(p, q)
-    e = primos_entre_si(m)
-
-    D = multiplicaInverso(e, m)
-
-    # Converte a frase em uma lista de inteiros usando a função ord
-    frase_inteiros = [ord(char) for char in frase]
-
-    # Criptografa cada caractere da frase
-    frase_criptografada = [pow(i, e, N) for i in frase_inteiros]
-    return frase_criptografada, N, D
-
-def decriptografa(mensagem_criptografada, d, n):
-    # Descriptografa cada caractere da mensagem
-    mensagem_descriptografada = [pow(i, d, n) for i in mensagem_criptografada]
-
-    # Converte a mensagem descriptografada de uma lista de inteiros para uma string usando a função chr
-    return ''.join(chr(i) for i in mensagem_descriptografada)
+import socket
+import helper
 
 serverPort = 1300
-serverSocket = socket(AF_INET,SOCK_STREAM)
-serverSocket.bind(("",serverPort))
-serverSocket.listen(5) # o argumento “listen” diz à biblioteca de soquetes que queremos enfileirar no máximo 5 requisições de conexão (normalmente o máximo) antes de recusar começar a recusar conexões externas. Caso o resto do código esteja escrito corretamente, isso deverá ser o suficiente.
+serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+serverSocket.bind(("", serverPort))
+serverSocket.listen(5)
 
 print ("TCP Server\n")
 print ("Gerando números primos")
-p = geraNumeroPrimo(4096)
-q = geraNumeroPrimo(4096)
+p = helper.geraNumeroPrimo(1024)
+q = helper.geraNumeroPrimo(1024)
 print ("Números Gerados")
+
 n = p * q
-m = funcaoTotiente(p, q)
-e = primos_entre_si(m)
+resultadoTotient = helper.funcaoTotiente(p, q)
+resultadoPrimos = helper.primos_entre_si(resultadoTotient)
+chavePublica = helper.gerarChavePublica(resultadoTotient, n)
+chavePrivada = helper.modInverso(chavePublica[0], resultadoTotient)
+print('n', n)
+print('resultadoTotient ', resultadoTotient)
+print('resultadoPrimos ', resultadoPrimos)
 
-chavePublica = (e, n)
+while True :
+    connectionSocket, addr = serverSocket.accept()
+    connectionSocket.sendall(str(chavePublica).encode())
 
-connectionSocket, addr = serverSocket.accept()
-sentence = connectionSocket.recv(65000)
-received = str(sentence,"utf-8")
+    mensagem = connectionSocket.recv(65536)
+    chavePublicaCliente = eval(mensagem.decode())
+    print ("Chave publica cliente: ", chavePublicaCliente)
 
-print ("Received From Client: ", received)
+    mensagem = connectionSocket.recv(65536)
+    mensagemEncriptada = eval(mensagem.decode())
+    mensagemDecriptada = helper.decriptografa(mensagemEncriptada, chavePrivada, n)
 
-capitalizedSentence = sentence.upper() # processamento
-connectionSocket.send(capitalizedSentence)
+    print("Mensagem recebida: ", mensagemDecriptada)
 
-sent = str(capitalizedSentence,"utf-8")
-print ("Sent back to Client: ", sent)
-connectionSocket.close()
+    mensagemMaiuscula = helper.criptografa(mensagemDecriptada.upper(), chavePublicaCliente) # processamento
+    connectionSocket.send(str(mensagemMaiuscula).encode())
+
+    sent = mensagemDecriptada.upper()
+    print ("Sent back to Client: ", sent)
